@@ -1,0 +1,1318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Purim Tracker / Sorter — LAJE</title>
+<style>
+  :root {
+    --bg0:#050913; --bg1:#070f24; --card: rgba(255,255,255,.06);
+    --stroke: rgba(255,255,255,.12);
+    --stroke2: rgba(86,140,255,.35);
+    --text: rgba(255,255,255,.92);
+    --muted: rgba(255,255,255,.72);
+    --muted2: rgba(255,255,255,.55);
+    --blue2: rgba(86,140,255,.22);
+    --shadow: 0 16px 55px rgba(0,0,0,.45);
+    --safeTop: env(safe-area-inset-top, 0px);
+    --safeBot: env(safe-area-inset-bottom, 0px);
+    --radius: 22px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 50% 15%, rgba(30,80,255,.22), rgba(5,9,19,0) 55%),
+      radial-gradient(900px 620px at 25% 85%, rgba(120,40,255,.18), rgba(5,9,19,0) 55%),
+      linear-gradient(180deg, var(--bg0), var(--bg1));
+    overflow-x:hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .shell{max-width: 920px; margin: 0 auto; padding: calc(18px + var(--safeTop)) 14px 120px;}
+  .topBar{display:flex; gap:10px; align-items:center; justify-content:space-between;}
+  .brand{display:flex; gap:12px; align-items:center;}
+  .badgeLA{width:44px;height:44px;border-radius:16px;background:var(--card);border:1px solid var(--stroke);display:grid;place-items:center;font-weight:950}
+  .title{font-weight: 1000; letter-spacing: .2px; font-size: 15px; line-height:1.1;}
+  .subtitle{font-size:12px; color:var(--muted2); font-weight: 900; margin-top:3px;}
+  .pillRow{display:flex; gap:10px; align-items:center;}
+  .pill{min-width:44px;height:44px;border-radius:16px;background:var(--card);border:1px solid var(--stroke);display:grid;place-items:center;color:var(--muted)}
+  .searchRow{margin-top:14px; display:flex; gap:10px; align-items:center;}
+  .search{flex:1; display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius: 18px; background: var(--card); border:1px solid var(--stroke); box-shadow: 0 10px 30px rgba(0,0,0,.25);}
+  .search input{flex:1; background:transparent; border:none; outline:none; color:var(--text); font-weight: 900; font-size:14px;}
+  .kbd{font-size:12px; color:var(--muted2); border:1px solid var(--stroke); border-radius: 12px; padding:6px 10px; font-weight: 950;}
+  .btn{border:none; cursor:pointer; color:var(--text); font-weight: 950; border-radius: 18px; padding:12px 14px; background: var(--card); border:1px solid var(--stroke);}
+  .btn.primary{background: linear-gradient(180deg, rgba(86,140,255,.95), rgba(86,140,255,.65)); border-color: rgba(86,140,255,.35);}
+  .quickRow{margin-top:14px; display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;}
+  .quick{border-radius: var(--radius); background: var(--card); border:1px solid var(--stroke); padding:14px; min-height:78px; position:relative; overflow:hidden;}
+  .quick b{display:block; font-size:16px; font-weight: 1000;}
+  .quick small{display:block; margin-top:6px; color:var(--muted2); font-weight: 900; line-height:1.25;}
+  .quick .emoji{position:absolute; right:14px; top:14px; font-size:20px; opacity:.95}
+  .chipsWrap{margin-top:14px;}
+  .chips{display:flex; gap:10px; overflow:auto; padding-bottom:8px; -webkit-overflow-scrolling: touch;}
+  .chip{white-space:nowrap; border-radius: 999px; padding:10px 12px; background: var(--card); border:1px solid var(--stroke); font-weight: 950; color: var(--text); display:flex; gap:10px; align-items:center; cursor:pointer;}
+  .chip .count{min-width:22px;height:22px;border-radius:999px;display:grid;place-items:center;background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color: var(--muted); font-size:12px; font-weight:1000;}
+  .chip.active{background: var(--blue2); border-color: var(--stroke2);}
+  .sectionHead{margin-top:10px; display:flex; align-items:baseline; justify-content:space-between; gap:12px;}
+  .sectionHead h2{margin: 12px 0 0; font-size:18px; font-weight: 1000;}
+  .hint{margin:0; color:var(--muted2); font-weight: 900; font-size:12px;}
+  .miniRow{margin-top:12px; display:flex; gap:12px; overflow:auto; padding-bottom: 10px;}
+  .miniCard{flex:0 0 300px; border-radius: var(--radius); background: rgba(255,255,255,.07); border:1px solid var(--stroke); padding:14px; position:relative; box-shadow: 0 12px 35px rgba(0,0,0,.25); cursor:pointer;}
+  .miniTag{position:absolute; left:12px; top:12px; background: rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.16); padding:6px 10px; border-radius: 999px; font-weight: 950; font-size: 12px;}
+  .miniCard h3{margin:44px 0 0; font-size:16px; font-weight: 1000; line-height:1.2;}
+  .miniMeta{margin-top:8px; color:var(--muted); font-weight: 900; font-size:12px;}
+  .grid{margin-top:10px; display:grid; grid-template-columns: 1fr; gap:10px;}
+  .card{border-radius: var(--radius); background: rgba(255,255,255,.06); border:1px solid var(--stroke); padding:14px; box-shadow: 0 12px 35px rgba(0,0,0,.22);}
+  .rowTop{display:flex; justify-content:space-between; gap:12px;}
+  .rowTop b{display:block; font-weight: 1000; font-size:15px; line-height:1.2;}
+  .rowTop small{display:block; margin-top:6px; color:var(--muted2); font-weight: 900;}
+  .tags{margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;}
+  .tag{padding:7px 10px; border-radius:999px; background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color: var(--muted); font-weight: 950; font-size: 12px;}
+  .actions{margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;}
+  .actions .btn{padding:10px 12px; border-radius: 16px; text-decoration:none; display:inline-block;}
+  .bottomNav{
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(12px + var(--safeBot));
+    width: min(720px, calc(100% - 20px));
+    display:flex; gap:8px; padding: 10px;
+    border-radius: 22px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--shadow);
+    z-index: 80;
+  }
+  .navItem{flex:1; padding:10px 8px; border-radius:16px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04); color: rgba(255,255,255,.92); font-weight: 1000; cursor:pointer;}
+  .navItem.active{background: var(--blue2); border-color: var(--stroke2);}
+  .views{margin-top: 8px;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .toast{position:fixed; left:50%; transform:translateX(-50%); bottom: 98px; z-index: 120; padding: 10px 14px;
+    border-radius: 14px; background: rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.16);
+    color: rgba(255,255,255,.92); font-weight: 950; opacity:0; transition: opacity .18s ease;
+  }
+  .toast.show{opacity:1;}
+  .debug{margin-top:10px; padding:10px 12px; border-radius:16px; background: rgba(255,0,120,.10); border:1px solid rgba(255,0,120,.25); color: rgba(255,255,255,.9); font-weight: 900; display:none;}
+
+  /* HARD OVERRIDE: Category chips row must be a wrapped grid, not scroll */
+  #catChips{
+    overflow: visible !important;
+    padding-bottom: 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  #catChips .chip{
+    width: 100% !important;
+    justify-content: space-between !important;
+    padding: 12px 14px !important;
+    border-radius: 999px !important;
+  }
+  @media (min-width: 680px){
+    #catChips{ grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  }
+  @media (max-width: 380px){
+    #catChips .chip{ font-size: 13px; padding: 11px 12px; }
+    #catChips .chip .count{ min-width: 20px; height: 20px; }
+  }
+
+
+  .subLabelRow{display:flex;justify-content:space-between;align-items:center;margin:10px 2px 8px}
+  .subLabel{font-weight:800;letter-spacing:.2px;color:rgba(255,255,255,.92)}
+  .subHint{font-size:12px;color:rgba(255,255,255,.55);font-weight:650}
+  .dayChips{overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:10px}
+  .dayChips::-webkit-scrollbar{display:none}
+  .dayChips .chip{padding:10px 12px;font-size:13px}
+  .regionBar{display:flex;gap:10px;align-items:center}
+  #regionSelect{
+    width:100%;
+    appearance:none;
+    -webkit-appearance:none;
+    padding:12px 14px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.06);
+    color:rgba(255,255,255,.92);
+    font-weight:750;
+    letter-spacing:.2px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06);
+    outline:none;
+  }
+  #regionSelect:focus{border-color:rgba(77,163,255,.55); box-shadow: 0 0 0 4px rgba(77,163,255,.12), 0 10px 30px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06);}
+
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topBar">
+      <div class="brand">
+        <div class="badgeLA">LA</div>
+        <div>
+          <div class="title">Purim Tracker / Sorter — Prototype</div>
+          <div class="subtitle"><span id="subline">Mock demo • 30 events • pick your night in 60 seconds</span></div>
+        </div>
+      </div>
+      <div class="pillRow">
+        <div class="pill" title="Saved count"><span id="savedCount">0</span></div>
+        <div class="pill" title="Theme">⚙️</div>
+        <div class="pill" title="More">⋯</div>
+      </div>
+    </div>
+
+    <div class="searchRow">
+      <div class="search">
+        <div style="opacity:.85">🔎</div>
+        <input id="q" placeholder="Search events, orgs, neighborhoods…" autocomplete="off" />
+        <div class="kbd">⌘K</div>
+      </div>
+      <button class="btn" id="nearMe">Near Me</button>
+    </div>
+
+    <div class="quickRow">
+      <div class="quick" id="quickTonight"><b>Tonight</b><small>Fast picks near you</small><div class="emoji">🌙</div></div>
+      <div class="quick" id="quickWeekend"><b>This Weekend</b><small>Biggest energy</small><div class="emoji">🎉</div></div>
+      <div class="quick" id="quickNew"><b>New</b><small>Fresh drops</small><div class="emoji">🆕</div></div>
+    </div>
+
+    <div class="chipsWrap">
+      <div class="chips" id="catChips" class="chips chipsGrid" aria-label="Category chips"></div>
+          <div class="subLabelRow"><div class="subLabel">Pick a day</div><div class="subHint">Mon–Sun • Weekend • Tonight</div></div>
+          <div id="dayChips" class="chips dayChips"></div>
+          <div class="subLabelRow"><div class="subLabel">Region</div><div class="subHint">Filter by LA area</div></div>
+          <div class="regionBar"><select id="regionSelect" aria-label="Region filter"></select></div>
+    </div>
+    <div class="chipsWrap" style="margin-top:10px">
+      <div class="chips" id="typeChips" aria-label="Type chips"></div>
+    </div>
+
+    <div class="debug" id="debugBox"></div>
+
+    <div class="views">
+      <section class="view active" id="viewExplore">
+        <div class="sectionHead">
+          <h2>Featured picks</h2>
+          <p class="hint" id="hintFeatured">Curated • fast decisions</p>
+        </div>
+        <div class="miniRow" id="featuredRow"></div>
+
+        <div class="sectionHead" style="margin-top:14px">
+          <h2>Browse Purim</h2>
+          <p class="hint" id="hintBrowse">Soonest • closest • best fit</p>
+        </div>
+        <div class="grid" id="gridExplore"></div>
+      </section>
+
+      <section class="view" id="viewMap">
+        <div class="sectionHead">
+          <h2>Map</h2>
+          <p class="hint">Prototype placeholder (list-first for speed)</p>
+        </div>
+        <div class="card">Map view intentionally stubbed for now — list-first is faster on mobile.</div>
+      </section>
+
+      <section class="view" id="viewTonight">
+        <div class="sectionHead">
+          <h2>Tonight</h2>
+          <p class="hint">Starting soon • closest • highest energy</p>
+        </div>
+        <div class="grid" id="gridTonight"></div>
+      </section>
+
+      <section class="view" id="viewSaved">
+        <div class="sectionHead">
+          <h2>Saved</h2>
+          <p class="hint">Your plan — shareable + add to calendar</p>
+        </div>
+        <div class="grid" id="gridSaved"></div>
+      </section>
+
+      <section class="view" id="viewProfile">
+        <div class="sectionHead">
+          <h2>Me</h2>
+          <p class="hint">Prototype profile</p>
+        </div>
+        <div class="card">Coming soon — preferences, home region, notifications.</div>
+      </section>
+    </div>
+  </div>
+
+  <nav class="bottomNav" role="navigation" aria-label="Bottom navigation">
+    <button class="navItem active" id="navExplore">✨ Explore</button>
+    <button class="navItem" id="navMap">🗺️ Map</button>
+    <button class="navItem" id="navTonight">🌙 Tonight</button>
+    <button class="navItem" id="navSaved">⭐ Saved</button>
+    <button class="navItem" id="navProfile">👤 Me</button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const CATEGORY_DEFS = [
+  { key:"All", label:"✨ All" },
+  { key:"Megillah Reading", label:"📜 Megillah" },
+  { key:"Party", label:"🥂 Party" },
+  { key:"Dinner", label:"🍽️ Dinner" },
+  { key:"Shabbat", label:"🕯️ Shabbat" },
+  { key:"Costume/Show", label:"🎭 Costume/Show" },
+  { key:"Afterparty", label:"🎧 Afterparty" },
+  { key:"Mitzvah/Volunteer", label:"🤝 Mitzvah/Vol" },
+  { key:"Learning", label:"📚 Learning" },
+];
+const TYPE_DEFS = [
+  { key:"All", label:"All" },
+  { key:"Party", label:"🥂 Party" },
+  { key:"Megillah", label:"📜 Megillah" },
+  { key:"Mixer", label:"🫶 Mixer" },
+  { key:"Dinner", label:"🍽️ Dinner" },
+  { key:"Brunch", label:"🥂 Brunch" },
+  { key:"Show", label:"🎭 Show" },
+  { key:"Family", label:"👨‍👩‍👧‍👦 Family" },
+  { key:"Hike", label:"🌿 Outdoors" },
+  { key:"Hang", label:"🔥 Hang" },
+  { key:"Upscale", label:"💎 Upscale" },
+];
+
+const DAY_DEFS = [
+  { key:'All', label:'All' },
+  { key:'Mon', label:'Mon' },{ key:'Tue', label:'Tue' },{ key:'Wed', label:'Wed' },{ key:'Thu', label:'Thu' },
+  { key:'Fri', label:'Fri' },{ key:'Sat', label:'Sat' },{ key:'Sun', label:'Sun' },
+  { key:'Weekend', label:'Weekend' },
+  { key:'Tonight', label:'Tonight' },
+];
+
+const REGION_DEFS = [
+  'All LA',
+  'Westside',
+  'Valley',
+  'Hollywood',
+  'Mid-City',
+  'DTLA',
+  'Eastside',
+  'South Bay',
+];
+
+function renderSimpleChips(root, defs, key){
+  root.innerHTML='';
+  defs.forEach(d=>{
+    const v = d.key;
+    const btn = document.createElement('button');
+    btn.type='button';
+    btn.className = 'chip' + (state[key]===v ? ' active' : '');
+    btn.textContent = d.label;
+    btn.addEventListener('click', ()=>{ state[key]=v; rerender(); });
+    root.appendChild(btn);
+  });
+}
+
+const EVENTS_RAW = [
+  {
+    "id": 1,
+    "category": "Party",
+    "name": "Purim Bash — Silver Lake",
+    "org": "Nelly’s List",
+    "venue": "Private Estate",
+    "address": "Silver Lake, Los Angeles, CA",
+    "region": "Eastside",
+    "neighborhood": "Silver Lake",
+    "type": "Party",
+    "tags": [
+      "Rooftop",
+      "Costumes",
+      "Open Bar",
+      "Singles Friendly"
+    ],
+    "price": 15,
+    "rsvp": "https://example.com/rsvp/1",
+    "featured": false,
+    "dayOffset": 1,
+    "startHour": 21,
+    "startMinute": 0,
+    "durationHours": 4
+  },
+  {
+    "id": 2,
+    "category": "Purim",
+    "name": "Purim Speakeasy — WeHo",
+    "org": "LA Jewish Events",
+    "venue": "Rooftop Loft",
+    "address": "WeHo, Los Angeles, CA",
+    "region": "Hollywood",
+    "neighborhood": "WeHo",
+    "type": "Brunch",
+    "tags": [
+      "Daytime",
+      "Bubbles",
+      "Brunch",
+      "Cute"
+    ],
+    "price": 18,
+    "rsvp": "https://example.com/rsvp/2",
+    "featured": false,
+    "dayOffset": 5,
+    "startHour": 13,
+    "startMinute": 30,
+    "durationHours": 3
+  },
+  {
+    "id": 3,
+    "category": "Purim",
+    "name": "Purim After Dark — Mar Vista",
+    "org": "Chabad Young Pros",
+    "venue": "Hidden Bar",
+    "address": "Mar Vista, Los Angeles, CA",
+    "region": "Westside",
+    "neighborhood": "Mar Vista",
+    "type": "Mixer",
+    "tags": [
+      "Wine",
+      "Cocktails",
+      "Singles Friendly",
+      "Networking",
+      "Costumes"
+    ],
+    "price": 30,
+    "rsvp": "https://example.com/rsvp/3",
+    "featured": false,
+    "dayOffset": 0,
+    "startHour": 20,
+    "startMinute": 30,
+    "durationHours": 4
+  },
+  {
+    "id": 4,
+    "category": "Purim",
+    "name": "Purim Speakeasy — Hollywood",
+    "org": "Jewish Grad Org",
+    "venue": "Warehouse Loft",
+    "address": "Hollywood, Los Angeles, CA",
+    "region": "Hollywood",
+    "neighborhood": "Hollywood",
+    "type": "Mixer",
+    "tags": [
+      "Singles Friendly",
+      "Networking",
+      "Wine",
+      "Chill"
+    ],
+    "price": 65,
+    "rsvp": "https://example.com/rsvp/4",
+    "featured": false,
+    "dayOffset": 1,
+    "startHour": 19,
+    "startMinute": 30,
+    "durationHours": 2
+  },
+  {
+    "id": 5,
+    "category": "Purim",
+    "name": "Purim Soirée — Echo Park",
+    "org": "LA Jewish Events",
+    "venue": "Private Estate",
+    "address": "Echo Park, Los Angeles, CA",
+    "region": "Eastside",
+    "neighborhood": "Echo Park",
+    "type": "Show",
+    "tags": [
+      "Show",
+      "Comedy",
+      "Cabaret",
+      "Live Music",
+      "Costumes"
+    ],
+    "price": 25,
+    "rsvp": "https://example.com/rsvp/5",
+    "featured": false,
+    "dayOffset": 6,
+    "startHour": 18,
+    "startMinute": 30,
+    "durationHours": 3
+  },
+  {
+    "id": 6,
+    "category": "Party",
+    "name": "Purim Bash — WeHo",
+    "org": "The Commons",
+    "venue": "Chabad House",
+    "address": "WeHo, Los Angeles, CA",
+    "region": "Hollywood",
+    "neighborhood": "WeHo",
+    "type": "Party",
+    "tags": [
+      "DJ",
+      "Rooftop",
+      "Costumes",
+      "Open Bar"
+    ],
+    "price": 20,
+    "rsvp": "https://example.com/rsvp/6",
+    "featured": false,
+    "dayOffset": 2,
+    "startHour": 23,
+    "startMinute": 45,
+    "durationHours": 3
+  },
+  {
+    "id": 7,
+    "category": "Purim",
+    "name": "Purim Speakeasy — Pico-Robertson",
+    "org": "Jewish Grad Org",
+    "venue": "Chabad House",
+    "address": "Pico-Robertson, Los Angeles, CA",
+    "region": "Mid-City",
+    "neighborhood": "Pico-Robertson",
+    "type": "Mixer",
+    "tags": [
+      "Wine",
+      "Singles Friendly",
+      "Chill",
+      "Cocktails",
+      "Costumes"
+    ],
+    "price": 65,
+    "rsvp": "https://example.com/rsvp/7",
+    "featured": false,
+    "dayOffset": 2,
+    "startHour": 20,
+    "startMinute": 0,
+    "durationHours": 2
+  },
+  {
+    "id": 8,
+    "category": "Purim",
+    "name": "Purim Speakeasy — Beverly Grove",
+    "org": "Chabad Young Pros",
+    "venue": "Community Courtyard",
+    "address": "Beverly Grove, Los Angeles, CA",
+    "region": "Mid-City",
+    "neighborhood": "Beverly Grove",
+    "type": "Dinner",
+    "tags": [
+      "Community",
+      "Dinner",
+      "Upscale",
+      "Costumes"
+    ],
+    "price": 30,
+    "rsvp": "https://example.com/rsvp/8",
+    "featured": true,
+    "dayOffset": 6,
+    "startHour": 20,
+    "startMinute": 15,
+    "durationHours": 2
+  },
+  {
+    "id": 9,
+    "category": "Party",
+    "name": "Purim Carnival — Hollywood",
+    "org": "Chabad Young Pros",
+    "venue": "The Spotlight",
+    "address": "Hollywood, Los Angeles, CA",
+    "region": "Hollywood",
+    "neighborhood": "Hollywood",
+    "type": "Party",
+    "tags": [
+      "DJ",
+      "Afterparty",
+      "Costumes",
+      "Singles Friendly"
+    ],
+    "price": 18,
+    "rsvp": "https://example.com/rsvp/9",
+    "featured": false,
+    "dayOffset": 5,
+    "startHour": 23,
+    "startMinute": 0,
+    "durationHours": 4
+  },
+  {
+    "id": 10,
+    "category": "Purim",
+    "name": "Purim Masquerade — Highland Park",
+    "org": "972 Party",
+    "venue": "Wine Bar",
+    "address": "Highland Park, Los Angeles, CA",
+    "region": "Eastside",
+    "neighborhood": "Highland Park",
+    "type": "Mixer",
+    "tags": [
+      "Networking",
+      "Singles Friendly",
+      "Wine",
+      "Chill"
+    ],
+    "price": 20,
+    "rsvp": "https://example.com/rsvp/10",
+    "featured": true,
+    "dayOffset": 4,
+    "startHour": 19,
+    "startMinute": 0,
+    "durationHours": 2
+  },
+  {
+    "id": 11,
+    "category": "Purim",
+    "name": "Purim After Dark — Hollywood",
+    "org": "972 Party",
+    "venue": "The Spotlight",
+    "address": "Hollywood, Los Angeles, CA",
+    "region": "Hollywood",
+    "neighborhood": "Hollywood",
+    "type": "Hang",
+    "tags": [
+      "BYOB",
+      "Friends",
+      "Costumes",
+      "Low Key"
+    ],
+    "price": 0,
+    "rsvp": "https://example.com/rsvp/11",
+    "featured": false,
+    "dayOffset": 4,
+    "startHour": 21,
+    "startMinute": 30,
+    "durationHours": 3
+  },
+  {
+    "id": 12,
+    "category": "Purim",
+    "name": "Purim Speakeasy — Atwater Village",
+    "org": "Happy Minyan",
+    "venue": "Wine Bar",
+    "address": "Atwater Village, Los Angeles, CA",
+    "region": "Eastside",
+    "neighborhood": "Atwater Village",
+    "type": "Megillah",
+    "tags": [
+      "L’Chaim",
+      "Megillah Reading",
+      "Community",
+      "Young Professionals",
+      "Costumes"
+    ],
+    "price": 0,
+    "rsvp": "https://example.com/rsvp/12",
+    "featured": false,
+    "dayOffset": 6,
+    "startHour": 20,
+    "startMinute": 0,
+    "durationHours": 2
+  },
+  {
+    "id": 13,
+    "category": "Purim",
+    "name": "Purim Rooftop — Sherman Oaks",
+    "org": "Chabad Young Pros",
+    "venue": "Wine Bar",
+    "address": "Sherman Oaks, Los Angeles, CA",
+    "region": "Valley",
+    "neighborhood": "Sherman Oaks",
+    "type": "Hang",
+    "tags": [
+      "BYOB",
+      "Low Key",
+      "Costumes",
+      "Friends"
+    ],
+    "price": 15,
+    "rsvp": "https://example.com/rsvp/13",
+    "featured": false,
+    "dayOffset": 6,
+    "startHour": 20,
+    "startMinute": 0,
+    "durationHours": 4
+  },
+  {
+    "id": 14,
+    "category": "Family",
+    "name": "Purim Rooftop — Studio City",
+    "org": "Nelly’s List",
+    "venue": "Wine Bar",
+    "address": "Studio City, Los Angeles, CA",
+    "region": "Valley",
+    "neighborhood": "Studio City",
+    "type": "Upscale",
+    "tags": [
+      "Open Bar",
+      "VIP",
+      "Upscale",
+      "Rooftop"
+    ],
+    "price": 20,
+    "rsvp": "https://example.com/rsvp/14",
+    "featured": true,
+    "dayOffset": 2,
+    "startHour": 23,
+    "startMinute": 45,
+    "durationHours": 2
+  },
+  {
+    "id": 15,
+    "category": "Party",
+    "name": "Purim Speakeasy — Culver City",
+    "org": "Sinai ATID",
+    "venue": "The Spotlight",
+    "address": "Culver City, Los Angeles, CA",
+    "region": "Westside",
+    "neighborhood": "Culver City",
+    "type": "Party",
+    "tags": [
+      "Rooftop",
+      "DJ",
+      "Singles Friendly",
+      "Open Bar"
+    ],
+    "price": 15,
+    "rsvp": "https://example.com/rsvp/15",
+    "featured": false,
+    "dayOffset": 4,
+    "startHour": 20,
+    "startMinute": 15,
+    "durationHours": 3
+  },
+  {
+    "id": 16,
+    "category": "Family",
+    "name": "Purim After Dark — Los Feliz",
+    "org": "Der Nister",
+    "venue": "Community Courtyard",
+    "address": "Los Feliz, Los Angeles, CA",
+    "region": "Hollywood",
+    "neighborhood": "Los Feliz",
+    "type": "Family",
+    "tags": [
+      "Family Friendly",
+      "Daytime",
+      "Kids Welcome",
+      "Games",
+      "Costumes"
+    ],
+    "price": 0,
+    "rsvp": "https://example.com/rsvp/16",
+    "featured": false,
+    "dayOffset": 3,
+    "startHour": 11,
+    "startMinute": 30,
+    "durationHours": 3
+  },
+  {
+    "id": 17,
+    "category": "Purim",
+    "name": "Purim Speakeasy — WeHo",
+    "org": "Jewish Grad Org",
+    "venue": "Chabad House",
+    "address": "WeHo, Los Angeles, CA",
+    "region": "Hollywood",
+    "neighborhood": "WeHo",
+    "type": "Megillah",
+    "tags": [
+      "Megillah Reading",
+      "Traditional",
+      "Community",
+      "Young Professionals"
+    ],
+    "price": 0,
+    "rsvp": "https://example.com/rsvp/17",
+    "featured": false,
+    "dayOffset": 5,
+    "startHour": 19,
+    "startMinute": 0,
+    "durationHours": 4
+  },
+  {
+    "id": 18,
+    "category": "Purim",
+    "name": "Purim Soirée — Beverly Grove",
+    "org": "Der Nister",
+    "venue": "Community Courtyard",
+    "address": "Beverly Grove, Los Angeles, CA",
+    "region": "Mid-City",
+    "neighborhood": "Beverly Grove",
+    "type": "Family",
+    "tags": [
+      "Daytime",
+      "Kids Welcome",
+      "Family Friendly",
+      "Games"
+    ],
+    "price": 0,
+    "rsvp": "https://example.com/rsvp/18",
+    "featured": true,
+    "dayOffset": 4,
+    "startHour": 13,
+    "startMinute": 30,
+    "durationHours": 2
+  },
+  {
+    "id": 19,
+    "category": "Purim",
+    "name": "Purim Masquerade — Miracle Mile",
+    "org": "Chabad Young Pros",
+    "venue": "The Spotlight",
+    "address": "Miracle Mile, Los Angeles, CA",
+    "region": "Mid-City",
+    "neighborhood": "Miracle Mile",
+    "type": "Dinner",
+    "tags": [
+      "Costumes",
+      "Community",
+      "Family Friendly",
+      "Dinner"
+    ],
+    "price": 55,
+    "rsvp": "https://example.com/rsvp/19",
+    "featured": false,
+    "dayOffset": 5,
+    "startHour": 18,
+    "startMinute": 0,
+    "durationHours": 3
+  },
+  {
+    "id": 20,
+    "category": "Purim",
+    "name": "Purim Bash — Little Tokyo",
+    "org": "Chabad Young Pros",
+    "venue": "Warehouse Loft",
+    "address": "Little Tokyo, Los Angeles, CA",
+    "region": "DTLA",
+    "neighborhood": "Little Tokyo",
+    "type": "Show",
+    "tags": [
+      "Comedy",
+      "Costumes",
+      "Show",
+      "Live Music"
+    ],
+    "price": 18,
+    "rsvp": "https://example.com/rsvp/20",
+    "featured": false,
+    "dayOffset": 6,
+    "startHour": 20,
+    "startMinute": 45,
+    "durationHours": 4
+  },
+  {
+    "id": 21,
+    "category": "Purim",
+    "name": "Purim Speakeasy — Echo Park",
+    "org": "Chabad Young Pros",
+    "venue": "Hidden Bar",
+    "address": "Echo Park, Los Angeles, CA",
+    "region": "Eastside",
+    "neighborhood": "Echo Park",
+    "type": "Megillah",
+    "tags": [
+      "Community",
+      "L’Chaim",
+      "Traditional",
+      "Megillah Reading",
+      "Costumes"
+    ],
+    "price": 0,
+    "rsvp": "https://example.com/rsvp/21",
+    "featured": false,
+    "dayOffset": 6,
+    "startHour": 18,
+    "startMinute": 45,
+    "durationHours": 2
+  },
+  {
+    "id": 22,
+    "category": "Purim",
+    "name": "Purim Glow — Brentwood",
+    "org": "The Commons",
+    "venue": "Hidden Bar",
+    "address": "Brentwood, Los Angeles, CA",
+    "region": "Westside",
+    "neighborhood": "Brentwood",
+    "type": "Megillah",
+    "tags": [
+      "L’Chaim",
+      "Traditional",
+      "Young Professionals",
+      "Community",
+      "Costumes"
+    ],
+    "price": 0,
+    "rsvp": "https://example.com/rsvp/22",
+    "featured": false,
+    "dayOffset": 5,
+    "startHour": 20,
+    "startMinute": 30,
+    "durationHours": 2
+  },
+  {
+    "id": 23,
+    "category": "Purim",
+    "name": "Purim Glow — Studio City",
+    "org": "Der Nister",
+    "venue": "Community Courtyard",
+    "address": "Studio City, Los Angeles, CA",
+    "region": "Valley",
+    "neighborhood": "Studio City",
+    "type": "Mixer",
+    "tags": [
+      "Wine",
+      "Cocktails",
+      "Chill",
+      "Singles Friendly",
+      "Costumes"
+    ],
+    "price": 45,
+    "rsvp": "https://example.com/rsvp/23",
+    "featured": false,
+    "dayOffset": 0,
+    "startHour": 20,
+    "startMinute": 45,
+    "durationHours": 2
+  },
+  {
+    "id": 24,
+    "category": "Family",
+    "name": "Purim Masquerade — Silver Lake",
+    "org": "Nelly’s List",
+    "venue": "Chabad House",
+    "address": "Silver Lake, Los Angeles, CA",
+    "region": "Eastside",
+    "neighborhood": "Silver Lake",
+    "type": "Family",
+    "tags": [
+      "Kids Welcome",
+      "Family Friendly",
+      "Daytime",
+      "Games"
+    ],
+    "price": 45,
+    "rsvp": "https://example.com/rsvp/24",
+    "featured": false,
+    "dayOffset": 2,
+    "startHour": 13,
+    "startMinute": 30,
+    "durationHours": 3
+  },
+  {
+    "id": 25,
+    "category": "Party",
+    "name": "Purim Carnival — South Park",
+    "org": "972 Party",
+    "venue": "Wine Bar",
+    "address": "South Park, Los Angeles, CA",
+    "region": "DTLA",
+    "neighborhood": "South Park",
+    "type": "Party",
+    "tags": [
+      "Singles Friendly",
+      "Afterparty",
+      "DJ",
+      "Open Bar"
+    ],
+    "price": 40,
+    "rsvp": "https://example.com/rsvp/25",
+    "featured": false,
+    "dayOffset": 3,
+    "startHour": 23,
+    "startMinute": 15,
+    "durationHours": 4
+  },
+  {
+    "id": 26,
+    "category": "Party",
+    "name": "Purim Bash — Highland Park",
+    "org": "Der Nister",
+    "venue": "Rooftop Loft",
+    "address": "Highland Park, Los Angeles, CA",
+    "region": "Eastside",
+    "neighborhood": "Highland Park",
+    "type": "Party",
+    "tags": [
+      "Singles Friendly",
+      "Open Bar",
+      "Costumes",
+      "Rooftop"
+    ],
+    "price": 55,
+    "rsvp": "https://example.com/rsvp/26",
+    "featured": false,
+    "dayOffset": 0,
+    "startHour": 20,
+    "startMinute": 15,
+    "durationHours": 3
+  },
+  {
+    "id": 27,
+    "category": "Purim",
+    "name": "Purim Soirée — Hollywood",
+    "org": "LA Jewish Events",
+    "venue": "The Spotlight",
+    "address": "Hollywood, Los Angeles, CA",
+    "region": "Hollywood",
+    "neighborhood": "Hollywood",
+    "type": "Show",
+    "tags": [
+      "Live Music",
+      "Show",
+      "Cabaret",
+      "Costumes"
+    ],
+    "price": 45,
+    "rsvp": "https://example.com/rsvp/27",
+    "featured": true,
+    "dayOffset": 6,
+    "startHour": 19,
+    "startMinute": 15,
+    "durationHours": 2
+  },
+  {
+    "id": 28,
+    "category": "Party",
+    "name": "Purim Soirée — Highland Park",
+    "org": "Jewish Grad Org",
+    "venue": "Temple Hall",
+    "address": "Highland Park, Los Angeles, CA",
+    "region": "Eastside",
+    "neighborhood": "Highland Park",
+    "type": "Upscale",
+    "tags": [
+      "Dressy",
+      "Open Bar",
+      "VIP",
+      "DJ"
+    ],
+    "price": 40,
+    "rsvp": "https://example.com/rsvp/28",
+    "featured": false,
+    "dayOffset": 6,
+    "startHour": 23,
+    "startMinute": 45,
+    "durationHours": 2
+  },
+  {
+    "id": 29,
+    "category": "Purim",
+    "name": "Purim Bash — Mar Vista",
+    "org": "Nelly’s List",
+    "venue": "Warehouse Loft",
+    "address": "Mar Vista, Los Angeles, CA",
+    "region": "Westside",
+    "neighborhood": "Mar Vista",
+    "type": "Megillah",
+    "tags": [
+      "Community",
+      "Traditional",
+      "L’Chaim",
+      "Megillah Reading",
+      "Costumes"
+    ],
+    "price": 0,
+    "rsvp": "https://example.com/rsvp/29",
+    "featured": false,
+    "dayOffset": 2,
+    "startHour": 20,
+    "startMinute": 0,
+    "durationHours": 2
+  },
+  {
+    "id": 30,
+    "category": "Purim",
+    "name": "Purim Carnival — Venice",
+    "org": "Happy Minyan",
+    "venue": "Temple Hall",
+    "address": "Venice, Los Angeles, CA",
+    "region": "Westside",
+    "neighborhood": "Venice",
+    "type": "Hang",
+    "tags": [
+      "Friends",
+      "BYOB",
+      "Costumes",
+      "Low Key"
+    ],
+    "price": 0,
+    "rsvp": "https://example.com/rsvp/30",
+    "featured": false,
+    "dayOffset": 5,
+    "startHour": 20,
+    "startMinute": 45,
+    "durationHours": 3
+  }
+];
+const LS_SAVED = "LAJE_PURIM_SAVED_V2";
+let saved = new Set(JSON.parse(localStorage.getItem(LS_SAVED) || "[]"));
+let state = { view:"explore", q:"", cat:"Purim", type:"All" };
+
+const $ = (s)=> document.querySelector(s);
+const $$ = (s)=> Array.from(document.querySelectorAll(s));
+
+function toast(msg){
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=> el.classList.remove("show"), 1400);
+}
+
+function showDebug(msg){
+  const box = $("#debugBox");
+  box.style.display = "block";
+  box.textContent = msg;
+}
+
+window.onerror = function(message, source, lineno, colno){
+  showDebug("JS error: " + message + " @ " + lineno + ":" + colno);
+};
+
+function buildDates(ev){
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(ev.startHour, ev.startMinute, 0, 0);
+  start.setDate(now.getDate() + ev.dayOffset);
+  const end = new Date(start.getTime() + (ev.durationHours * 60 * 60 * 1000));
+  return { start, end };
+}
+
+function formatWhen(d){
+  const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  let h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2,"0");
+  const am = h>=12 ? "PM" : "AM";
+  h = h%12; if(h===0) h=12;
+  return days[d.getDay()] + " • " + h + ":" + m + " " + am;
+}
+
+function moneyLabel(p){ return (p===0) ? "Free" : "$" + p; }
+
+function gcalLink(ev, start, end){
+  const fmt = (d)=> d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z");
+  const dates = fmt(start) + "/" + fmt(end);
+  const text = encodeURIComponent(ev.name);
+  const details = encodeURIComponent("Hosted by " + ev.org + "\nRSVP: " + ev.rsvp);
+  const location = encodeURIComponent(ev.address || ev.venue || "");
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + text + "&dates=" + dates + "&details=" + details + "&location=" + location;
+}
+
+function normalizedEvents(){
+  return EVENTS_RAW.map(e=>{
+    const d = buildDates(e);
+    return Object.assign({}, e, { start:d.start, end:d.end });
+  });
+}
+
+let EVENTS = normalizedEvents();
+
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, (c)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+function matches(ev){
+  const q = (state.q||"").trim().toLowerCase();
+  const hay = (ev.name + " " + ev.org + " " + ev.venue + " " + ev.neighborhood + " " + ev.region + " " + (ev.tags||[]).join(" ")).toLowerCase();
+  const qOk = !q || q.split(/\s+/).every(t=> hay.indexOf(t) !== -1);
+
+  // Purim type filter (grid buttons)
+  const typeOk = (state.type==="All") || (ev.type===state.type);
+
+  // Region filter (dropdown)
+  const r = (state.region || "All LA");
+  const regionOk = (r==="All LA") || ((ev.region||"").toLowerCase().indexOf(r.toLowerCase()) !== -1);
+
+  // Day filter
+  const day = (state.day || "All");
+  const dow = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const evDay = dow[new Date(ev.start).getDay()];
+  const dayOk = (day==="All") ||
+    (day==="Weekend" ? (evDay==="Fri"||evDay==="Sat"||evDay==="Sun") :
+     (day==="Tonight" ? (new Date(ev.start).toDateString() === new Date().toDateString()) :
+      (evDay===day)));
+
+  return qOk && typeOk && regionOk && dayOk;
+}
+
+function results(){
+  const arr = EVENTS.filter(matches);
+  arr.sort((a,b)=> a.start - b.start);
+  return arr;
+}
+
+function renderChips(root, defs, key){
+  const prev = state[key];
+  state[key] = "All";
+  const base = EVENTS.filter(matches);
+  state[key] = prev;
+
+  const counts = new Map();
+  base.forEach(e=>{
+    const v = (key==="cat") ? e.category : e.type;
+    counts.set(v, (counts.get(v)||0)+1);
+  });
+
+  root.innerHTML = "";
+  defs.forEach(d=>{
+    const v = d.key;
+    const count = (v==="All") ? base.length : (counts.get(v)||0);
+    const btn = document.createElement("button");
+    btn.type="button";
+    btn.className = "chip" + (state[key]===v ? " active" : "");
+    btn.innerHTML = d.label + " <span class=\"count\">" + count + "</span>";
+    btn.addEventListener("click", ()=>{ state[key]=v; rerender(); });
+    root.appendChild(btn);
+  });
+}
+
+function miniCardHTML(ev){
+  const tag = ev.featured ? "Featured" : ev.region;
+  const when = formatWhen(ev.start);
+  return "<div class=\"miniCard\" data-id=\"" + ev.id + "\">"
+    + "<div class=\"miniTag\">" + escapeHtml(tag) + "</div>"
+    + "<h3>" + escapeHtml(ev.name) + "</h3>"
+    + "<div class=\"miniMeta\">" + escapeHtml(ev.org) + " • " + when + " • " + escapeHtml(ev.neighborhood) + "</div>"
+    + "</div>";
+}
+
+function cardHTML(ev){
+  const when = formatWhen(ev.start) + " • " + escapeHtml(ev.neighborhood);
+  const tags = (ev.tags||[]).slice(0,5).map(t=>"<span class=\"tag\">" + escapeHtml(t) + "</span>").join("");
+  const isSaved = saved.has(String(ev.id));
+  return "<div class=\"card\" data-id=\"" + ev.id + "\">"
+    + "<div class=\"rowTop\">"
+    + "<div><b>" + escapeHtml(ev.name) + "</b>"
+    + "<small>" + escapeHtml(ev.org) + " • " + when + " • <span style=\"opacity:.85\">" + escapeHtml(ev.region) + "</span></small></div>"
+    + "<div style=\"text-align:right\"><div style=\"font-weight:1000\">" + moneyLabel(ev.price) + "</div>"
+    + "<div style=\"color:var(--muted2); font-weight:900; font-size:12px\">" + escapeHtml(ev.type) + "</div></div>"
+    + "</div>"
+    + "<div class=\"tags\">" + tags + "</div>"
+    + "<div class=\"actions\">"
+    + "<a class=\"btn primary\" href=\"" + ev.rsvp + "\" target=\"_blank\" rel=\"noopener\">RSVP</a>"
+    + "<button class=\"btn\" data-action=\"save\">" + (isSaved ? "Saved ⭐" : "Save") + "</button>"
+    + "<a class=\"btn\" href=\"" + gcalLink(ev, ev.start, ev.end) + "\" target=\"_blank\" rel=\"noopener\">Add to GCal</a>"
+    + "</div>"
+    + "</div>";
+}
+
+function renderExplore(){
+  const arr = results();
+  const featured = arr.filter(e=>e.featured).slice(0,8);
+  $("#featuredRow").innerHTML = featured.map(miniCardHTML).join("") || "<div class=\"card\">No featured picks.</div>";
+  $("#gridExplore").innerHTML = arr.map(cardHTML).join("") || "<div class=\"card\">No results — try clearing search.</div>";
+  $("#hintBrowse").textContent = "Showing " + arr.length + " • soonest first";
+  $("#hintFeatured").textContent = "Curated • " + featured.length + " highlights";
+  $("#savedCount").textContent = String(saved.size);
+}
+
+function renderTonight(){
+  const now = new Date();
+  const cutoff = new Date(now.getTime() + 8*60*60*1000);
+  const arr = results().filter(e=> e.start>=now && e.start<=cutoff);
+  $("#gridTonight").innerHTML = arr.map(cardHTML).join("") || "<div class=\"card\">No “tonight” picks — widen filters.</div>";
+}
+
+function renderSaved(){
+  const arr = EVENTS.filter(e=> saved.has(String(e.id))).sort((a,b)=>a.start-b.start);
+  $("#gridSaved").innerHTML = arr.map(cardHTML).join("") || "<div class=\"card\">Nothing saved yet. Tap “Save” on an event.</div>";
+}
+
+function setView(v){
+  state.view = v;
+  $$(".view").forEach(el=> el.classList.toggle("active", el.id === "view" + v.charAt(0).toUpperCase() + v.slice(1)));
+  $$(".navItem").forEach(el=> el.classList.remove("active"));
+  const nav = $("#nav" + v.charAt(0).toUpperCase() + v.slice(1));
+  if(nav) nav.classList.add("active");
+  if(v==="explore") renderExplore();
+  if(v==="tonight") renderTonight();
+  if(v==="saved") renderSaved();
+  // URL sync view
+  const url = new URL(location.href);
+  url.searchParams.set("view", v);
+  history.replaceState(null,"",url);
+}
+
+function rerender(){
+  renderChips($("#catChips"), CATEGORY_DEFS, "type");
+  // force grid layout on Android viewers that sometimes ignore class overrides
+  const _cc = document.getElementById("catChips");
+  if(_cc){
+    _cc.classList.add("chipsGrid");
+    _cc.style.display = "grid";
+    _cc.style.overflow = "visible";
+  }
+
+  renderChips($("#typeChips"), TYPE_DEFS, "type");
+  if($("#dayChips")) renderSimpleChips($("#dayChips"), DAY_DEFS, "day");
+  const sel = $("#regionSelect");
+  if(sel){
+    sel.innerHTML = REGION_DEFS.map(r=>`<option value="${r}">${r}</option>`).join("");
+    sel.value = state.region || "All LA";
+    sel.addEventListener("change", ()=>{ state.region = sel.value; rerender(); });
+  }
+
+  if(state.view==="explore") renderExplore();
+  if(state.view==="tonight") renderTonight();
+  if(state.view==="saved") renderSaved();
+  const url = new URL(location.href);
+  url.searchParams.set("cat", state.cat);
+  url.searchParams.set("type", state.type);
+  url.searchParams.set("q", state.q||"");
+  history.replaceState(null,"",url);
+}
+
+function boot(){
+  const url = new URL(location.href);
+  const cat = url.searchParams.get("cat");
+  const type = url.searchParams.get("type");
+  const q = url.searchParams.get("q");
+  const view = url.searchParams.get("view");
+  if(cat) state.cat = cat;
+  if(type) state.type = type;
+  if(q!==null) state.q = q;
+  if(view) state.view = view;
+
+  $("#q").value = state.q || "";
+  renderChips($("#catChips"), CATEGORY_DEFS, "type");
+  renderChips($("#typeChips"), TYPE_DEFS, "type");
+
+  setView(state.view || "explore");
+  rerender();
+
+  $("#q").addEventListener("input", (e)=>{ state.q = e.target.value; rerender(); });
+
+  document.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button[data-action='save']");
+    if(!btn) return;
+    const card = e.target.closest(".card");
+    const id = card && card.getAttribute("data-id");
+    if(!id) return;
+    if(saved.has(id)) saved.delete(id); else saved.add(id);
+    localStorage.setItem(LS_SAVED, JSON.stringify(Array.from(saved)));
+    toast(saved.has(id) ? "Saved" : "Removed");
+    rerender();
+  });
+
+  $("#featuredRow").addEventListener("click", (e)=>{
+    const c = e.target.closest(".miniCard");
+    if(!c) return;
+    const id = c.getAttribute("data-id");
+    const el = document.querySelector(".card[data-id='" + id + "']");
+    if(el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+  });
+
+  $("#navExplore").addEventListener("click", ()=> setView("explore"));
+  $("#navMap").addEventListener("click", ()=> setView("map"));
+  $("#navTonight").addEventListener("click", ()=> setView("tonight"));
+  $("#navSaved").addEventListener("click", ()=> setView("saved"));
+  $("#navProfile").addEventListener("click", ()=> setView("profile"));
+
+  $("#quickTonight").addEventListener("click", ()=> setView("tonight"));
+  $("#quickWeekend").addEventListener("click", ()=>{ state.cat="Purim"; rerender(); toast("Weekend picks"); });
+  $("#quickNew").addEventListener("click", ()=> toast("Fresh drops (mock)"));
+  $("#nearMe").addEventListener("click", ()=> toast("Near Me (mock)"));
+
+  // Hard proof-of-life
+  showDebug("Loaded ✅ Chips + 30 events rendered. If you see this, JS is running.");
+  setTimeout(()=>{ $("#debugBox").style.display="none"; }, 1800);
+}
+
+document.addEventListener("DOMContentLoaded", boot);
+</script>
+</body>
+</html>
