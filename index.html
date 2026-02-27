@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2026 Purim Tracker</title>
+  <meta name="description" content="Purim-only live event listing pulling from the LAJE Google Calendar API with Purim filters + regions." />
+  <style>
+    :root{
+      --bg1:#1a102d;
+      --bg2:#2b1748;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.08);
+      --border: rgba(255,255,255,.14);
+      --text: #ffffff;
+      --muted: #d3c7ff;
+      --gold: #ffd966;
+      --good: #3fe38a;
+      --warn: #ffcc66;
+      --bad: #ff5a7a;
+      --shadow: 0 18px 45px rgba(0,0,0,.35);
+      --r: 18px;
+    }
+    *{ box-sizing:border-box; }
+    html,body{overflow-x:hidden; height:100%; }
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(1100px 750px at 8% -10%, rgba(255,217,102,.12), transparent 60%),
+                  radial-gradient(900px 650px at 105% 10%, rgba(211,199,255,.22), transparent 62%),
+                  linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: var(--text);
+      padding-bottom: 26px;
+    }
+    a{ color: var(--gold); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+
+    header{
+      position: relative; z-index: 30;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(to bottom, rgba(26,16,45,.92), rgba(43,23,72,.62));
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .wrap{ max-width: 1100px; margin: 0 auto; padding: 16px 16px 40px; }
+
+    .top{
+      max-width:1100px;
+      margin:0 auto;
+      padding: 18px 16px 10px;
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      justify-content:space-between;
+    }
+    .brand{
+      display:flex; gap:10px; align-items:center; min-width:0;
+    }
+    .logo{
+      width:40px; height:40px; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(255,217,102,.95), rgba(211,199,255,.92));
+      color: rgba(26,16,45,.95);
+      display:grid; place-items:center;
+      font-weight: 950;
+      letter-spacing: .5px;
+      box-shadow: 0 12px 28px rgba(255,217,102,.16);
+      flex: 0 0 auto;
+    }
+    h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing: .2px;
+      font-weight: 950;
+      line-height: 1.15;
+    }
+    .sub{
+      color: var(--muted);
+      font-size: 12.5px;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 65vw;
+    }
+    .pills{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .pill{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      display:flex; gap:8px; align-items:center;
+    }
+    .dot{ width:8px; height:8px; border-radius: 999px; background: rgba(211,199,255,.55); }
+    .dot.good{ background: var(--good); }
+    .dot.warn{ background: var(--warn); }
+    .dot.bad{ background: var(--bad); }
+
+    /* Purim category grid */
+    .catWrap{
+      max-width:1100px;
+      margin: 0 auto;
+      padding: 10px 16px 12px;
+      display:flex;
+      justify-content:center;
+    }
+    .catGrid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+width:100%;justify-content:space-between;}
+
+    .catBtn{
+  appearance:none;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.92);
+  border-radius:999px;
+  padding:10px 14px;
+  font-weight:650;
+  letter-spacing:.1px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:42px;
+  cursor:pointer;
+  transition:transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+flex: 1 1 calc(50% - 10px);}
+.catBtn:hover{ transform:translateY(-1px); border-color:rgba(255,255,255,.22); background:rgba(255,255,255,.08); }
+.catBtn:active{ transform:translateY(0px) scale(.99); }
+.catBtn.active{
+  border-color:rgba(225,196,115,.55);
+  box-shadow:0 0 0 2px rgba(225,196,115,.18), 0 18px 50px rgba(0,0,0,.35);
+  background:linear-gradient(180deg, rgba(225,196,115,.16), rgba(255,255,255,.06));
+}
+    .catBtn:active{ transform: translateY(1px) scale(.995); }
+    .catBtn.active{
+      border-color: rgba(255,217,102,.55);
+      background: linear-gradient(135deg, rgba(255,217,102,.18), rgba(211,199,255,.12));
+    }
+    .catLeft{ display:flex; align-items:center; gap:10px; font-weight: 900; font-size: 13.5px; }
+    .catCount{
+      font-size: 12px;
+      color: var(--muted);
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.16);
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+
+    /* controls */
+    .panel{
+      margin-top: 10px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .controls{
+      padding: 14px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .input, select{
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.14);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+    .input{ flex: 1 1 260px; }
+    select{ flex: 0 0 auto; }
+    .btn{
+      background: linear-gradient(135deg, rgba(255,217,102,.96), rgba(211,199,255,.90));
+      border: 0;
+      color: rgba(26,16,45,.98);
+      font-weight: 950;
+      padding: 11px 14px;
+      border-radius: 12px;
+      cursor:pointer;
+      box-shadow: 0 12px 28px rgba(255,217,102,.14);
+      transition: transform .08s ease;
+      white-space: nowrap;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn.ghost{
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.14);
+      color: var(--text);
+      box-shadow: none;
+      font-weight: 900;
+    }
+
+    /* list */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+      padding: 14px;
+    }
+    .card{
+      grid-column: span 6;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      padding: 14px 14px 12px;
+      min-height: 154px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      transition: transform .12s ease, border-color .12s ease;
+    }
+    .card:hover{ transform: translateY(-1px); border-color: rgba(255,217,102,.40); }
+    .card h3{ margin:0; font-size: 16px; font-weight: 900; line-height: 1.25; }
+    .meta{
+      display:flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items:center;
+      color: var(--muted);
+      font-size: 12.5px;
+    }
+    .tag{
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      color: var(--muted);
+    }
+    .tag.saved{
+      border-color: rgba(63,227,138,.50);
+      background: rgba(63,227,138,.10);
+      color: var(--text);
+    }
+    .desc{
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.45;
+      margin:0;
+      display:-webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow:hidden;
+    }
+    .row{
+      display:flex;
+      justify-content: space-between;
+      gap:10px;
+      align-items:center;
+      margin-top:auto;
+      padding-top: 2px;
+    }
+    .links{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      font-size: 13px;
+    }
+    .links a, .links button{
+      display:inline-flex; gap:6px; align-items:center;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      text-decoration:none;
+      color: var(--text);
+      cursor:pointer;
+      font: inherit;
+    }
+    .links a:hover, .links button:hover{ border-color: rgba(255,217,102,.40); }
+    .small{ font-size: 12px; color: rgba(211,199,255,.72); }
+
+    .state{
+      padding: 14px;
+      color: var(--muted);
+      border-top: 1px solid rgba(255,255,255,.10);
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .state pre{
+      margin:0;
+      max-width: 100%;
+      overflow:auto;
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: #efe7ff;
+      font-size: 12px;
+    }
+
+    footer{
+      text-align:center;
+      padding: 26px 16px 22px;
+      font-size: 13px;
+      color: rgba(211,199,255,.88);
+      opacity: .95;
+    }
+
+    @media (max-width: 860px){
+      .card{ grid-column: span 12; }
+      .sub{ max-width: 74vw; }
+    }
+  
+  .prodTop{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12px; letter-spacing:.12em; text-transform:uppercase;
+    color: rgba(255,255,255,.68);
+    margin-bottom:10px;
+  }
+  .daydock{
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: rgba(10,14,28,.72);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(255,255,255,.10);
+    display:flex; gap:10px; align-items:center;
+    z-index: 50;
+  }
+  .daydock-scroll{
+    overflow-x:auto;
+    -webkit-overflow-scrolling: touch;
+    display:flex; gap:10px;
+    padding-bottom: 2px;
+    flex: 1 1 auto;
+  }
+  .daychip{
+    flex: 0 0 auto;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.9);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: .01em;
+    user-select:none;
+    white-space:nowrap;
+  }
+  .daychip.active{
+    border-color: rgba(135,189,255,.55);
+    box-shadow: 0 0 0 3px rgba(135,189,255,.12);
+    background: rgba(135,189,255,.10);
+  }
+  /* keep list visible above bottom dock */
+  .wrap{ padding-bottom: 86px; }
+
+
+/* Date strip */
+.dateStripWrap{margin:14px 0 18px 0}
+.dateStripTitle{font-size:12px;opacity:.75;margin:0 0 8px 2px;letter-spacing:.08em;text-transform:uppercase}
+.dateStrip{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px 2px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.dateChip{flex:0 0 auto;scroll-snap-align:start;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:inherit;border-radius:999px;padding:10px 12px;font-weight:600;font-size:13px;white-space:nowrap}
+.dateChip.active{border-color:rgba(99,102,241,.55);background:rgba(99,102,241,.18);box-shadow:0 0 0 2px rgba(99,102,241,.12) inset}
+.dateStrip::-webkit-scrollbar{height:6px}
+.dateStrip::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px}
+body{overscroll-behavior-y:none}
+*{max-width:100%}
+
+
+.daydock{display:flex;gap:10px;overflow-x:auto;padding:12px 14px;margin:14px 0 0;scrollbar-width:none;}
+.daydock::-webkit-scrollbar{display:none;}
+.daypill{
+  flex:0 0 auto;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.9);
+  border-radius:999px;
+  padding:10px 14px;
+  font-weight:650;
+  min-height:42px;
+}
+.daypill.active{
+  border-color:rgba(225,196,115,.55);
+  background:linear-gradient(180deg, rgba(225,196,115,.16), rgba(255,255,255,.06));
+  box-shadow:0 0 0 2px rgba(225,196,115,.16);
+}
+
+    /* Sticky filters + smoother scrolling */
+    header{ position: relative; z-index: 50; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    .catWrap{ position: static; top: 64px; z-index: 49; background: rgba(7,10,20,.92); padding-top: 10px; padding-bottom: 10px; }
+    .dateStripWrap{ position: sticky; top: 128px; z-index: 48; background: rgba(7,10,20,.92); padding-top: 10px; padding-bottom: 10px; }
+    html,body{ width:100%; overflow-x:hidden; }
+    *{ box-sizing:border-box; }
+
+</style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FKXSBTRJPN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FKXSBTRJPN');
+</script>
+
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="brand">
+      <div class="logo">LA</div>
+      <div style="min-width:0;">
+        P26 Purim Tracker</h1>
+        <div class="sub">Pulling from: <span id="endpointText"></span></div>
+      </div>
+    </div>
+    <div class="pills">
+      <div class="pill"><span class="dot" id="statusDot"></span><span id="statusText">Idle</span></div>
+      <div class="pill"><span class="dot good"></span><span><span id="shownCount">0</span> / <span id="totalCount">0</span></span></div>
+    </div>
+  </div>
+
+  <div class="catWrap">
+    <div class="catGrid" id="catGrid"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="controls">
+      <input id="search" class="input" placeholder="Search title, location, description…" />
+      <select id="region">
+        <option value="all">All LA Regions</option>
+        <option value="westside">Westside</option>
+        <option value="hollywood">Hollywood</option>
+        <option value="weho">WeHo</option>
+        <option value="midcity">Mid-City</option>
+        <option value="dtla">DTLA</option>
+        <option value="eastside">Eastside</option>
+        <option value="valley">Valley</option>
+        <option value="southbay">South Bay</option>
+        <option value="pasadena">Pasadena</option>
+      </select>
+      <select id="window">
+        <option value="7d">Next 7 days</option>
+        <option value="3d">Next 3 days</option>
+        <option value="today">Today</option>
+        <option value="all">All time</option>
+      </select>
+      <select id="sort">
+        <option value="best">Sort: Best match</option>
+        <option value="start_asc">Sort: Soonest</option>
+        <option value="start_desc">Sort: Latest</option>
+        <option value="title_asc">Sort: Title A→Z</option>
+      </select>
+      
+
+      <button class="btn" id="tonight">Tonight</button>
+      <button class="btn" id="savedToggle">Saved (0)</button>
+      <button class="btn" id="copyLink">Copy link</button>
+
+<button class="btn" id="refresh">Refresh</button>
+<button class="btn ghost" id="clear">Clear</button>
+    </div>
+
+    <div class="dateStripWrap"><div class="dateStripTitle">Dates</div><div class="dateStrip" id="dateStrip"><button class="dateChip active" data-date="any">Any</button><button class="dateChip" data-date="2026-02-25">Tue, Feb 25</button><button class="dateChip" data-date="2026-02-26">Wed, Feb 26</button><button class="dateChip" data-date="2026-02-27">Thu, Feb 27</button><button class="dateChip" data-date="2026-02-28">Fri, Feb 28</button><button class="dateChip" data-date="2026-03-01">Sun, Mar 1</button><button class="dateChip" data-date="2026-03-02">Mon, Mar 2</button><button class="dateChip" data-date="2026-03-03">Tue, Mar 3</button><button class="dateChip" data-date="2026-03-05">Thu, Mar 5</button><button class="dateChip" data-date="2026-03-06">Fri, Mar 6</button><button class="dateChip" data-date="2026-03-07">Sat, Mar 7</button><button class="dateChip" data-date="2026-03-08">Sun, Mar 8</button></div></div>
+<div class="grid" id="grid"></div>
+
+    <div class="state">
+      <div style="flex: 1 1 420px;">
+        <div class="small">
+          Saved events stay on your device. Shareable link includes <b>cat</b>, <b>region</b>, <b>date</b>, <b>tonight</b>, <b>q</b>, <b>window</b>, <b>sort</b>.
+        </div>
+      </div>
+      <div style="flex: 1 1 360px;">
+        <pre id="debug" style="display:none;"></pre>
+      </div>
+    </div>
+  </div>
+
+  <footer>An Andrew Lewis Production</footer>
+</div>
+
+<script>
+(() => {
+  const API_URL = "https://laje-purim-api.vercel.app/api/events/purim";
+
+  const CATEGORIES = [
+    { key:"all", label:"✨ All" },
+    { key:"megillah", label:"📖 Megillah" },
+    { key:"party", label:"🎭 Party / Masquerade" },
+    { key:"seudah", label:"🍷 Seudah / Dinner" },
+    { key:"carnival", label:"🎪 Carnival / Festival" },
+    { key:"shpiel", label:"🎤 Shpiel / Comedy" },
+    { key:"music", label:"🎶 Live Music" },
+    { key:"yp", label:"👑 Young Professionals" },
+    { key:"family", label:"👨‍👩‍👧‍👦 Family" },
+  ];
+
+  const REGIONS = [
+    { key:"westside", label:"Westside", keywords:["westside","santa monica","venice","mar vista","brentwood","palisades","westwood","ucla","culver","sawtelle"] },
+    { key:"hollywood", label:"Hollywood", keywords:["hollywood","los feliz","thai town","franklin village"] },
+    { key:"weho", label:"WeHo", keywords:["weho","west hollywood","sunset strip","melrose"] },
+    { key:"midcity", label:"Mid-City", keywords:["mid-city","midcity","fairfax","miracle mile","la brea","hancock park"] },
+    { key:"dtla", label:"DTLA", keywords:["dtla","downtown","arts district","little tokyo"] },
+    { key:"eastside", label:"Eastside", keywords:["eastside","silver lake","echo park","highland park","eagle rock","glassell park"] },
+    { key:"valley", label:"Valley", keywords:["valley","sherman oaks","studio city","encino","tarzana","woodland hills","north hollywood","van nuys"] },
+    { key:"southbay", label:"South Bay", keywords:["south bay","manhattan beach","hermosa","redondo","el segundo","torrance"] },
+    { key:"pasadena", label:"Pasadena", keywords:["pasadena","altadena","san marino"] },
+  ];
+
+  const els = {
+    endpointText: document.getElementById("endpointText"),
+    statusDot: document.getElementById("statusDot"),
+    statusText: document.getElementById("statusText"),
+    shownCount: document.getElementById("shownCount"),
+    totalCount: document.getElementById("totalCount"),
+    catGrid: document.getElementById("catGrid"),
+    grid: document.getElementById("grid"),
+    search: document.getElementById("search"),
+    region: document.getElementById("region"),
+    window: document.getElementById("window"),
+    sort: document.getElementById("sort"),
+    refresh: document.getElementById("refresh"),
+    dateStrip: document.getElementById("dateStrip"),
+    share: null,
+    clear: document.getElementById("clear"),
+    tonight: document.getElementById("tonight"),
+    savedToggle: document.getElementById("savedToggle"),
+    copyLink: document.getElementById("copyLink"),
+    debug: document.getElementById("debug"),
+  };
+
+  els.endpointText.textContent = API_URL;
+
+  const LS_SAVED_KEY = "LAJE_PURIM_SAVED_PURIMONLY_V1";
+  let rawItems = [];
+  let activeCat = "all";
+  
+  let activeDate = "any";
+let saved = loadSaved();
+
+  
+  let savedOnly = false;
+  let tonightOnly = false;
+// ---------- helpers ----------
+  const setStatus = (type, text) => {
+    els.statusDot.className = "dot " + (type || "");
+    els.statusText.textContent = text;
+  };
+
+  const parseDate = (v) => {
+    if (!v) return null;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const fmt = (d) => d.toLocaleString([], { weekday:"short", month:"short", day:"numeric", hour:"numeric", minute:"2-digit" });
+
+  const safe = (s) => (s || "").toString();
+
+  const escapeHtml = (str) =>
+    String(str ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  const firstUrl = (text) => {
+    const t = safe(text);
+    const m = t.match(/https?:\/\/[^\s)]+/i);
+    return m ? m[0].replace(/[)\].,]+$/,"") : "";
+  };
+
+  const normalizeRegion = (txt) => {
+    const t = safe(txt).toLowerCase().trim();
+    const map = {
+      "westside":"westside","west side":"westside","west":"westside",
+      "hollywood":"hollywood",
+      "weho":"weho","west hollywood":"weho",
+      "midcity":"midcity","mid-city":"midcity","mid city":"midcity",
+      "dtla":"dtla","downtown":"dtla",
+      "eastside":"eastside","east side":"eastside",
+      "valley":"valley","sfv":"valley",
+      "southbay":"southbay","south bay":"southbay",
+      "pasadena":"pasadena",
+    };
+    return map[t] || "";
+  };
+
+
+
+  // --- Purim-only hard enforcement (frontend) ---
+  // Even if the API returns non-Purim items, the UI will never show them.
+  const isPurimEvent = (evt) => {
+    const title = safe(evt?.summary);
+    const desc  = safe(evt?.description);
+    const loc   = safe(evt?.location);
+    const tags  = safe(evt?.__rawTags || evt?.tags || evt?.tag || evt?.__type);
+    const hay = (title + " " + desc + " " + loc + " " + tags).toLowerCase();
+    return hay.includes("purim") || hay.includes("[purim]");
+  };
+
+  const detectRegion = (e) => {
+    const desc = safe(e.description);
+    const m = desc.match(/region\s*:\s*([^\n\r<]+)/i);
+    if (m && m[1]) {
+      const r = normalizeRegion(m[1]);
+      if (r) return r;
+    }
+    const title = safe(e.summary || e.title);
+    const bm = title.match(/\[([^\]]+)\]/);
+    if (bm && bm[1]) {
+      const r2 = normalizeRegion(bm[1]);
+      if (r2) return r2;
+    }
+    const hay = (safe(e.location) + " " + title + " " + desc).toLowerCase();
+    for (const r of REGIONS){
+      if (r.keywords.some(k => hay.includes(k))) return r.key;
+    }
+    return "all";
+  };
+
+  const has = (hay, words) => words.some(w => hay.includes(w));
+
+  const detectPurimType = (e) => {
+    const hay = (safe(e.summary||e.title) + " " + safe(e.description) + " " + safe(e.location)).toLowerCase();
+
+    if (has(hay, ["megillah","megilla","reading of the megillah","megillat esther"])) return "megillah";
+    if (has(hay, ["carnival","festival","fair","kids zone","bounce","petting","mishloach"])) return "carnival";
+    if (has(hay, ["shpiel","spiel","comedy","standup","cabaret"])) return "shpiel";
+    if (has(hay, ["live music","band","concert","dj set","dance floor","music"])) return "music";
+    if (has(hay, ["young professionals","yjp","yp","20s","30s"])) return "yp";
+    if (has(hay, ["family","kids","children","tot","parents"])) return "family";
+    if (has(hay, ["seudah","seuda","dinner","meal","banquet","lunch","brunch"])) return "seudah";
+    if (has(hay, ["party","masquerade","afterparty","open bar","club","cocktail","rager","bash","costume party"])) return "party";
+    return "party"; // default vibe
+  };
+
+  const withinWindow = (e, w) => {
+    if (w === "all") return true;
+    const start = parseDate(e.start);
+    if (!start) return true;
+    const now = new Date();
+
+    if (w === "today") {
+      const s = new Date(now); s.setHours(0,0,0,0);
+      const end = new Date(now); end.setHours(23,59,59,999);
+      return start >= s && start <= end;
+    }
+    const end = new Date(now);
+    if (w === "3d") end.setDate(end.getDate() + 3);
+    if (w === "7d") end.setDate(end.getDate() + 7);
+    return start >= now && start <= end;
+  };
+
+  const sortItems = (items, sortKey) => {
+    const copy = [...items];
+    if (sortKey === "title_asc") copy.sort((a,b) => safe(a.summary).localeCompare(safe(b.summary)));
+    else if (sortKey === "start_desc") copy.sort((a,b) => (parseDate(b.start)?.getTime()||0) - (parseDate(a.start)?.getTime()||0));
+    else if (sortKey === "best") {
+      const now = Date.now();
+      const regionPref = els.region?.value || "all";
+      copy.sort((a,b) => score(a) - score(b));
+      function score(it){
+        const t = parseDate(it.start)?.getTime() || now + 9e15;
+        const hours = (t - now) / 36e5;
+        let s = hours;
+        if (regionPref !== "all" && it.__region === regionPref) s -= 6;
+        if (activeCat !== "all" && it.__type === activeCat) s -= 1.5;
+        if (it.__type === "megillah") s -= 1.0;
+        if (it.__type === "party") s -= 0.6;
+        return s;
+      }
+    }
+    else copy.sort((a,b) => (parseDate(a.start)?.getTime()||0) - (parseDate(b.start)?.getTime()||0));
+    return copy;
+  };
+
+  function loadSaved(){
+    try{ return JSON.parse(localStorage.getItem(LS_SAVED_KEY) || "[]"); } catch { return []; }
+  }
+  function saveSaved(){
+    localStorage.setItem(LS_SAVED_KEY, JSON.stringify(saved));
+  }
+  const isSaved = (id) => saved.includes(id);
+  const toggleSaved = (id) => {
+    saved = isSaved(id) ? saved.filter(x => x !== id) : [...saved, id];
+    saveSaved();
+    render();
+    renderDayDock();
+  };
+
+  const toGCalDates = (start, end) => {
+    const s = new Date(start);
+    const e = end ? new Date(end) : new Date(s.getTime() + 2*60*60*1000);
+    const pad2 = (n) => String(n).padStart(2,"0");
+    const toStr = (d) => {
+      const yyyy = d.getUTCFullYear();
+      const mm = pad2(d.getUTCMonth()+1);
+      const dd = pad2(d.getUTCDate());
+      const hh = pad2(d.getUTCHours());
+      const mi = pad2(d.getUTCMinutes());
+      const ss = pad2(d.getUTCSeconds());
+      return `${yyyy}${mm}${dd}T${hh}${mi}${ss}Z`;
+    };
+    return `${toStr(s)}/${toStr(e)}`;
+  };
+
+  // ---------- URL state ----------
+  const readParams = () => {
+    const p = new URLSearchParams(location.search);
+    const cat = p.get("cat");
+    const region = p.get("region");
+    const q = p.get("q");
+    const w = p.get("window");
+    const date = p.get("date");
+    const tonight = p.get("tonight");
+    const savedParam = p.get("saved");
+    const sort = p.get("sort");
+    if (cat && CATEGORIES.some(c => c.key === cat)) activeCat = cat;
+    if (region) els.region.value = region;
+    if (q !== null) els.search.value = q;
+    if (w) els.window.value = w;
+  
+    if (date) activeDate = date;
+    tonightOnly = tonight === "1";
+    savedOnly = savedParam === "1";
+    if (sort) els.sort.value = sort;
+};
+
+  const writeParams = () => {
+    const p = new URLSearchParams();
+    if (activeCat !== "all") p.set("cat", activeCat);
+    if (els.region.value !== "all") p.set("region", els.region.value);
+    if (els.search.value.trim()) p.set("q", els.search.value.trim());
+    if (els.window.value !== "7d") p.set("window", els.window.value);
+    if (activeDate && activeDate !== "any") p.set("date", activeDate);
+    if (tonightOnly) p.set("tonight","1");
+    if (savedOnly) p.set("saved","1");
+    if (els.sort.value !== "best") p.set("sort", els.sort.value);
+const newUrl = location.pathname + (p.toString() ? ("?" + p.toString()) : "");
+    history.replaceState({}, "", newUrl);
+  };
+
+  // ---------- UI ----------
+  const elsDayDock = document.getElementById("daydock");
+  const elsDayAny = document.getElementById("daychip-any");
+
+  const fmtDayKey = (d) => {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year:"numeric", month:"2-digit", day:"2-digit" }).formatToParts(d);
+    const y = parts.find(p=>p.type==="year").value;
+    const m = parts.find(p=>p.type==="month").value;
+    const day = parts.find(p=>p.type==="day").value;
+    return `${y}-${m}-${day}`;
+  };
+
+  const renderDayDock = () => {
+    if (!elsDayDock) return;
+    elsDayDock.innerHTML = "";
+    DATE_CHIPS.forEach(({key,label}) => {
+      const b = document.createElement("button");
+      b.className = "daychip" + (activeDate === key ? " active" : "");
+      b.type = "button";
+      b.dataset.date = key;
+      b.textContent = label;
+      b.addEventListener("click", () => {
+        activeDate = key;
+        // keep the "window" filter broad when a specific date is chosen
+        els.window.value = "7d";
+        render();
+        writeParams();
+        renderDayDock();
+      });
+      elsDayDock.appendChild(b);
+    });
+
+    if (elsDayAny){
+      elsDayAny.classList.toggle("active", !activeDate);
+      elsDayAny.onclick = () => {
+        activeDate = "";
+        render();
+        writeParams();
+        renderDayDock();
+      };
+    }
+  };
+
+  function buildCatGrid(){
+    els.catGrid.innerHTML = CATEGORIES.map(c => `
+      <div class="catBtn ${c.key === activeCat ? "active" : ""}" data-cat="${c.key}">
+        <div class="catLeft">${escapeHtml(c.label)}</div>
+        <div class="catCount" id="count_${c.key}">0</div>
+      </div>
+    `).join("");
+
+    els.catGrid.querySelectorAll(".catBtn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeCat = btn.getAttribute("data-cat");
+        writeParams();
+        buildCatGrid();
+        render();
+      });
+    });
+  }
+
+  function wireDateStrip(){
+    if(!els.dateStrip) return;
+    els.dateStrip.addEventListener("click", (e) => {
+      const btn = e.target.closest(".dateChip");
+      if(!btn) return;
+      const val = btn.dataset.date || "any";
+      activeDate = val;
+      [...els.dateStrip.querySelectorAll(".dateChip")].forEach(b => b.classList.toggle("active", (b.dataset.date||"any") === activeDate));
+      writeParams();
+      render();
+      const top = document.getElementById("resultsTop");
+      if(top) top.scrollIntoView({behavior:"smooth", block:"start"});
+    }, { passive:true });
+  }
+
+  function wireQuickButtons(){
+    if (els.tonight){
+      els.tonight.addEventListener("click", () => {
+        tonightOnly = !tonightOnly;
+        els.window.value = tonightOnly ? "today" : "7d";
+        els.tonight.classList.toggle("active", tonightOnly);
+        writeParams();
+        render();
+      });
+    }
+    if (els.savedToggle){
+      els.savedToggle.addEventListener("click", () => {
+        savedOnly = !savedOnly;
+        els.savedToggle.classList.toggle("active", savedOnly);
+        writeParams();
+        render();
+      });
+    }
+    if (els.copyLink){
+      els.copyLink.addEventListener("click", async () => {
+        writeParams();
+        const url = location.href;
+        try{
+          await navigator.clipboard.writeText(url);
+          const old = els.copyLink.textContent;
+          els.copyLink.textContent = "Copied ✓";
+          setTimeout(()=>{ els.copyLink.textContent = old; }, 900);
+        }catch(e){
+          prompt("Copy this link:", url);
+        }
+      });
+    }
+  }
+
+  function updateSavedBadge(){
+    const n = (saved || []).length;
+    if (els.savedToggle) els.savedToggle.textContent = `Saved (${n})`;
+  }
+
+
+  const updateCounts = () => {
+    const counts = Object.fromEntries(CATEGORIES.map(c => [c.key, 0]));
+    for (const it of rawItems){
+      counts["all"]++;
+      if (counts[it.__type] !== undefined) counts[it.__type]++;
+    }
+    for (const c of CATEGORIES){
+      const el = document.getElementById("count_" + c.key);
+      if (el) el.textContent = String(counts[c.key] || 0);
+    }
+  };
+
+  const cardHtml = (it) => {
+    const id = it.__id;
+    const start = parseDate(it.start);
+    const end = parseDate(it.end);
+    const when = start ? fmt(start) : "Time TBD";
+    const title = safe(it.summary || "Untitled");
+    const loc = safe(it.location);
+    const desc = safe(it.description);
+    const rsvp = firstUrl(desc);
+    const gcalOpen = safe(it.htmlLink || it.link || "");
+    const gcalAdd = start
+      ? `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${encodeURIComponent(toGCalDates(start, end))}&details=${encodeURIComponent(desc || "")}&location=${encodeURIComponent(loc || "")}`
+      : "";
+
+    const regionLabel = (REGIONS.find(r => r.key === it.__region)?.label) || "LA";
+    const typeLabel = (CATEGORIES.find(c => c.key === it.__type)?.label) || "✨ All";
+    const savedBadge = isSaved(id) ? `<span class="tag saved">Saved ✓</span>` : "";
+
+    return `
+      <div class="card">
+        <div>
+          <h3>${escapeHtml(title)}</h3>
+          <div class="meta">
+            <span class="tag">${escapeHtml(when)}</span>
+            <span class="tag">${escapeHtml(regionLabel)}</span>
+            <span class="tag">${escapeHtml(typeLabel)}</span>
+            ${savedBadge}
+          </div>
+        </div>
+
+        ${desc ? `<p class="desc">${escapeHtml(desc)}</p>` : `<p class="desc">No description.</p>`}
+
+        <div class="row">
+          <div class="links">
+            ${rsvp ? `<a href="${escapeHtml(rsvp)}" target="_blank" rel="noopener">RSVP ↗</a>` : ""}
+            ${gcalAdd ? `<a href="${escapeHtml(gcalAdd)}" target="_blank" rel="noopener">Add to Google Calendar ↗</a>` : ""}
+            ${loc ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}" target="_blank" rel="noopener">Directions ↗</a>` : ""}
+            ${gcalOpen ? `<a href="${escapeHtml(gcalOpen)}" target="_blank" rel="noopener">Open ↗</a>` : ""}
+            <button type="button" onclick="window.__LAJ_toggleSaved('${encodeURIComponent(id)}')">${isSaved(id) ? "Unsave" : "Save"}</button>
+          </div>
+          <span class="small">${escapeHtml(it.__region !== "all" ? it.__region : "")}</span>
+        </div>
+      </div>
+    `;
+  };
+
+  const emptyHtml = () => `
+    <div class="card" style="grid-column: span 12;">
+      <h3>No events match your filters.</h3>
+      <p class="desc">Try a different Purim button, switch region, or pick another date.</p>
+      <div class="row" style="gap:12px;">
+        <div class="links" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button type="button" onclick="window.__LAJ_clear()">Clear filters</button>
+          <button type="button" onclick="document.getElementById(\'region\').value=\'all\';document.getElementById(\'window\').value=\'7d\';location.search=\'\';">Reset view</button>
+          <button type="button" onclick="document.getElementById(\'search\').focus()">Search again</button>
+        </div>
+        <span class="small">Tip: hit <b>Copy link</b> to share this exact view in WhatsApp.</span>
+      </div>
+    </div>
+  `;
+
+  function render(){
+    updateCounts();
+    updateSavedBadge();
+    if (els.tonight) els.tonight.classList.toggle('active', tonightOnly);
+    if (els.savedToggle) els.savedToggle.classList.toggle('active', savedOnly);
+    if (els.dateStrip) [...els.dateStrip.querySelectorAll('.dateChip')].forEach(b=>b.classList.toggle('active',(b.dataset.date||'any')===activeDate));
+
+    const q = els.search.value.trim().toLowerCase();
+    let items = rawItems;
+
+    if (activeCat !== "all") items = items.filter(it => it.__type === activeCat);
+    if (els.region.value !== "all") items = items.filter(it => it.__region === els.region.value);
+    if (els.window.value !== "all") items = items.filter(it => withinWindow(it, els.window.value));
+    
+    if (activeDate && activeDate !== "any") items = items.filter(it => it.__dateISO === activeDate);
+    if (tonightOnly) items = items.filter(it => withinWindow(it, "today"));
+    if (savedOnly) items = items.filter(it => saved.includes(it.__id));
+if (q) items = items.filter(it => (safe(it.summary) + " " + safe(it.location) + " " + safe(it.description)).toLowerCase().includes(q));
+
+    items = sortItems(items, els.sort.value);
+
+    els.totalCount.textContent = String(rawItems.length);
+    els.shownCount.textContent = String(items.length);
+
+    els.grid.innerHTML = items.length ? items.map(cardHtml).join("") : emptyHtml();
+  }
+
+  // ---------- actions ----------
+  window.__LAJ_toggleSaved = (encodedId) => {
+    const id = decodeURIComponent(encodedId);
+    toggleSaved(id);
+  };
+
+  window.__LAJ_clear = () => {
+    els.search.value = "";
+    els.region.value = "all";
+    els.window.value = "7d";
+    els.sort.value = "best";
+    activeCat = "all";
+    buildCatGrid();
+    writeParams();
+    render();
+  };
+
+  async function shareFilters(){
+    // deprecated (Share button removed) — use Copy link
+    if (els.copyLink) els.copyLink.click();
+  }
+
+  function showDebug(obj){
+    els.debug.style.display = "block";
+    els.debug.textContent = JSON.stringify(obj, null, 2);
+  }
+
+  // ---------- fetch ----------
+  async function fetchEvents(){
+    setStatus("warn","Fetching…");
+    try{
+      const res = await fetch(API_URL, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok){
+        setStatus("bad","API error");
+        showDebug({ status: res.status, data });
+        rawItems = [];
+        render();
+        return;
+      }
+
+      const items = Array.isArray(data.items) ? data.items : [];
+      rawItems = items.map((e) => {
+        const id = e.id || e.__id || e.htmlLink || e.link || (e.summary || e.title || "") + "|" + (e.start?.dateTime||e.start||"");
+        const summary = e.summary || e.title || "";
+        const start = e.start?.dateTime || e.start || "";
+        const end = e.end?.dateTime || e.end || "";
+        const obj = {
+          ...e,
+          __id: id,
+          summary,
+          start,
+          end,
+        };
+        obj.__region = detectRegion(obj);
+        obj.__type = detectPurimType(obj);
+        
+        obj.__dateISO = start ? fmtDayKey(new Date(start)) : "";
+return obj;
+      });
+
+            rawItems = rawItems.filter(isPurimEvent);
+
+      setStatus("good","Live");
+      els.debug.style.display = "none";
+      buildCatGrid(); // counts depend on data
+      render();
+    } catch (err){
+      setStatus("bad","Network error");
+      showDebug({ error: String(err) });
+      rawItems = [];
+      render();
+    }
+  }
+
+  // wire controls
+  els.search.addEventListener("input", () => { writeParams(); render(); });
+  els.region.addEventListener("change", () => { writeParams(); render(); });
+  els.window.addEventListener("change", () => { writeParams(); render(); });
+  els.sort.addEventListener("change", () => { writeParams(); render(); });
+  els.refresh.addEventListener("click", fetchEvents);
+els.clear.addEventListener("click", window.__LAJ_clear);
+
+  // init
+  readParams();
+  wireDateStrip();
+  wireQuickButtons();
+  updateSavedBadge();
+  buildCatGrid();
+  if(!els.sort.value) els.sort.value = 'best';
+  fetchEvents();
+})();
+</script>
+
+  <!-- Day dock (scrollable dates) -->
+  <div class="daydock" role="navigation" aria-label="Filter by date">
+    <button class="daychip" data-date="" id="daychip-any" title="Clear date filter">Any day</button>
+    <div class="daydock-scroll" id="daydock"></div>
+  </div>
+
+</body>
+</html>
