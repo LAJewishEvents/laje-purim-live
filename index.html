@@ -456,12 +456,6 @@ body{overscroll-behavior-y:none}
       </select>
       
 
-      <button class="btn" id="tonight">Tonight</button>
-      <button class="btn" id="savedToggle">Saved (0)</button>
-      <button class="btn" id="copyLink">Copy link</button>
-
-<button class="btn" id="refresh">Refresh</button>
-<button class="btn ghost" id="clear">Clear</button>
     </div>
 
     <div class="dateStripWrap"><div class="dateStripTitle">Dates</div><div class="dateStrip" id="dateStrip"><button class="dateChip active" data-date="any">Any</button><button class="dateChip" data-date="2026-02-25">Tue, Feb 25</button><button class="dateChip" data-date="2026-02-26">Wed, Feb 26</button><button class="dateChip" data-date="2026-02-27">Thu, Feb 27</button><button class="dateChip" data-date="2026-02-28">Fri, Feb 28</button><button class="dateChip" data-date="2026-03-01">Sun, Mar 1</button><button class="dateChip" data-date="2026-03-02">Mon, Mar 2</button><button class="dateChip" data-date="2026-03-03">Tue, Mar 3</button><button class="dateChip" data-date="2026-03-05">Thu, Mar 5</button><button class="dateChip" data-date="2026-03-06">Fri, Mar 6</button><button class="dateChip" data-date="2026-03-07">Sat, Mar 7</button><button class="dateChip" data-date="2026-03-08">Sun, Mar 8</button></div></div>
@@ -479,7 +473,7 @@ body{overscroll-behavior-y:none}
     </div>
   </div>
 
-  <footer>An Andrew Lewis Production</footer>
+  <footer>Coded by Andrew [LA Jewish Events} </footer>
 </div>
 
 <script>
@@ -494,7 +488,6 @@ body{overscroll-behavior-y:none}
     { key:"carnival", label:"🎪 Carnival / Festival" },
     { key:"shpiel", label:"🎤 Shpiel / Comedy" },
     { key:"music", label:"🎶 Live Music" },
-    { key:"yp", label:"👑 Young Professionals" },
     { key:"family", label:"👨‍👩‍👧‍👦 Family" },
   ];
 
@@ -628,7 +621,7 @@ let saved = loadSaved();
     if (has(hay, ["shpiel","spiel","comedy","standup","cabaret"])) return "shpiel";
     if (has(hay, ["live music","band","concert","dj set","dance floor","music"])) return "music";
     if (has(hay, ["young professionals","yjp","yp","20s","30s"])) return "yp";
-    if (has(hay, ["family","kids","children","tot","parents"])) return "family";
+    if (has(hay, ["family","kids","children","tot","parents" ,"carniva" ,"festival","fair","bounce","petting" ])) return "family";
     if (has(hay, ["seudah","seuda","dinner","meal","banquet","lunch","brunch"])) return "seudah";
     if (has(hay, ["party","masquerade","afterparty","open bar","club","cocktail","rager","bash","costume party"])) return "party";
     return "party"; // default vibe
